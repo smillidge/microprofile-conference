@@ -31,31 +31,38 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.cache.annotation.*;
+
 @Path("/")
 @Api(description = "Schedule REST Endpoint")
 @RequestScoped
 @Produces("application/json")
+@CacheDefaults(cacheName = "java-one")
 public class ScheduleResource {
 
     @Inject
     private ScheduleDAO scheduleDAO;
 
-    @POST
+    @PUT
     @Consumes("application/json")
-    public Response add(Schedule schedule) {
+    @CachePut
+    public Schedule add(@QueryParam("id") @CacheKey Long id, @CacheValue Schedule schedule) {
         Schedule created = scheduleDAO.addSchedule(schedule);
-        return Response.created(URI.create("/" + created.getId()))
-            .entity(created)
-            .build();
+        return created;
+//        return Response.created(URI.create("/" + created.getId()))
+//                        .entity(created)
+//                        .build();
     }
 
     @GET
     @Path("/{id}")
-    public Response retrieve(@PathParam("id") Long id) {
-        return scheduleDAO.findById(id)
-            .map(schedule -> Response.ok(schedule).build())
-            .orElse(Response.status(Response.Status.NOT_FOUND).build());
+    @CacheResult
+    public Schedule retrieve(@PathParam("id") @CacheKey Long id) {
+        return scheduleDAO.findById(id).get();
+//            .map(schedule -> Response.ok(schedule).build())
+//            .orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
+    
 
     @GET
     @Path("/all")
